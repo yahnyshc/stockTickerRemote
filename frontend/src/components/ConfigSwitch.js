@@ -57,7 +57,7 @@ const ConfigSwitch = () => {
       // make patch request to update the config
       const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/config/add`, {
         method: 'POST',
-        body: JSON.stringify({ name: 'New Config', subs: [] }),
+        body: JSON.stringify({ name: 'New Config', subs: [], api_names: [], logo_names: [] }),
         headers: {
           'Content-Type': 'application/json',
         },

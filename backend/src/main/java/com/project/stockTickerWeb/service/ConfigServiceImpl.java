@@ -6,8 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.Vector;
 
 @Service
 public class ConfigServiceImpl implements ConfigService{
@@ -21,9 +19,7 @@ public class ConfigServiceImpl implements ConfigService{
     }
 
     @Override
-    public List<Config> getAllConfigs() {
-        return configRepository.findAll();
-    }
+    public List<Config> getAllConfigs() { return configRepository.findAllByOrderByLastTouchedDesc(); }
 
     public Config updateConfig(Config config) { return configRepository.save(config); }
 }

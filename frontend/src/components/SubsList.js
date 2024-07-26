@@ -12,6 +12,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import CheckIcon from '@mui/icons-material/Check';
 import { useConfigContext } from '../hooks/useConfigContext';
+import FinnhubSearch from './FinnhubSearch';
+import IconSearch from './IconSearch';
 
 const SubsList = () => {
   const { configs, selected, dispatch } = useConfigContext();
@@ -21,26 +23,47 @@ const SubsList = () => {
   const [showNewSubField, setShowNewSubField] = React.useState(false);
   const [editConfigName, setEditConfigName] = React.useState(false);
   const [configNameValue, setConfigNameValue] = React.useState(selected ? selected.name : '');
-
-  const [config, setConfig] = React.useState(selected);
+  const [updatingConfig, setUpdatingConfig] = React.useState(false);
+  const [submenuIndex, setSubmenuIndex] = React.useState(null);
+  const [config, setConfig] = React.useState(selected)
+  const [submenuChanges, setSubmenuChanges] = React.useState({});
 
   React.useEffect(() => {
     if (selected) {
       setConfig(selected);
+      setConfigNameValue(selected.name);
+      const initialSubmenuChanges = selected.subs.reduce((acc, _, index) => {
+        acc[index] = { apiName: selected.api_names[index], logoName: selected.logo_names[index] };
+        return acc;
+      }, {});
+      setSubmenuChanges(initialSubmenuChanges);
     }
   }, [selected]);
 
   const handleDelete = async (toDelete) => {
-    setConfig({ ...config, subs: config.subs.filter((sub) => sub !== toDelete) })
+    setUpdatingConfig(true);
+    const index = config.subs.indexOf(toDelete);
+    setConfig({
+      ...config,
+      subs: config.subs.filter((sub) => sub !== toDelete),
+      api_names: config.api_names.filter((_, i) => i !== index),
+      logo_names: config.logo_names.filter((_, i) => i !== index)
+    });
   };
 
-  const handleEdit = (index) => () => {
+  const handleEdit = (index) => (event) => {
+    event.stopPropagation();
     setEditIndex(index);
     setEditValue(config.subs[index]);
   };
 
-  const handleSave = async () => {
-    setConfig({ ...config, subs: [...config.subs.slice(0, editIndex), editValue, ...config.subs.slice(editIndex + 1)] })
+  const handleSave = async (event) => {
+    event.stopPropagation();
+    setUpdatingConfig(true);
+    setConfig({
+      ...config,
+      subs: [...config.subs.slice(0, editIndex), editValue, ...config.subs.slice(editIndex + 1)]
+    });
     setEditIndex(null);
     setEditValue('');
   };
@@ -60,8 +83,9 @@ const SubsList = () => {
             },
           });
         }
-      }
+      };
       configs.forEach(clearCurrent);
+      setUpdatingConfig(true);
       setConfig({ ...config, current: true });
     }
   };
@@ -76,7 +100,13 @@ const SubsList = () => {
 
   const handleAddNew = React.useCallback(async () => {
     if (newSub && !config.subs.includes(newSub)) {
-      setConfig({ ...config, subs: [...config.subs, newSub] });
+      setUpdatingConfig(true);
+      setConfig({
+        ...config,
+        subs: [...config.subs, newSub],
+        api_names: [...config.api_names, newSub],
+        logo_names: [...config.logo_names, newSub]
+      });
       setShowNewSubField(false);
       setNewSub('');
     }
@@ -100,17 +130,47 @@ const SubsList = () => {
       }
     };
 
-    updateConfig();
-    
-  }, [config, dispatch]);
+    if (updatingConfig) {
+      updateConfig();
+      setUpdatingConfig(false);
+    }
+
+  }, [config, dispatch, updatingConfig]);
 
   const handleConfigNameEdit = () => {
     setEditConfigName(true);
   };
 
   const handleConfigNameSave = async () => {
-    setConfig({ ...config, name: configNameValue })
+    setUpdatingConfig(true);
+    setConfig({ ...config, name: configNameValue });
     setEditConfigName(false);
+  };
+
+  const handleSubmenuChange = (index, apiName, logoName) => {
+    setSubmenuChanges({
+      ...submenuChanges,
+      [index]: { apiName, logoName }
+    });
+  };
+
+  const handleSubmenuClose = (index) => {
+    console.log("Saving mappings");
+    if (submenuChanges[index]) {
+      const { apiName, logoName } = submenuChanges[index];
+      console.log("apiName: ", apiName, " logoName: ", logoName);
+      setUpdatingConfig(true);
+      const newApiNames = [...config.api_names];
+      const newLogoNames = [...config.logo_names];
+      newApiNames[index] = apiName;
+      newLogoNames[index] = logoName;
+      setConfig({
+        ...config,
+        api_names: newApiNames,
+        logo_names: newLogoNames
+      });
+    }
+    setSubmenuIndex(null);
   };
 
   const paperStyle = { padding: "10px 10px", width: "80%", margin: "20px auto", position: 'relative' };
@@ -119,20 +179,19 @@ const SubsList = () => {
     <Container>
       <Paper elevation={3} style={paperStyle}>
         <div 
-          style={
-            { display: 'flex', 
-              justifyContent: "center", 
-              textAlign: 'center', 
-              alignItems: 'center', 
-              border: '1px solid black',
-              borderRadius: '10px',
-              backgroundColor: '#292929',
-              marginBottom: '10px',
-              color: 'white',
-              position: 'relative',
-              padding: '20px'
-            }
-          }>
+          style={{
+            display: 'flex', 
+            justifyContent: "center", 
+            textAlign: 'center', 
+            alignItems: 'center', 
+            border: '1px solid black',
+            borderRadius: '10px',
+            backgroundColor: '#292929',
+            marginBottom: '10px',
+            color: 'white',
+            position: 'relative',
+            padding: '20px'
+          }}>
           {editConfigName ? (
             <TextField
               value={configNameValue}
@@ -171,43 +230,65 @@ const SubsList = () => {
             {config.subs.map((value, index) => {
               const labelId = `checkbox-list-secondary-label-${value}`;
               return (
-                <ListItem
-                  key={value}
-                  secondaryAction={
-                    <div>
+                <div key={value}>
+                  <ListItem
+                    secondaryAction={
+                      <div>
+                        {editIndex === index ? (
+                          <IconButton edge="end" aria-label="save" onClick={handleSave}>
+                            <CheckIcon />
+                          </IconButton>
+                        ) : (
+                          <IconButton edge="end" aria-label="edit" onClick={handleEdit(index)}>
+                            <EditIcon />
+                          </IconButton>
+                        )}
+                        <IconButton edge="end" aria-label="delete" onClick={() => handleDelete(value)}>
+                          <DeleteIcon />
+                        </IconButton>
+                      </div>
+                    }
+                    disablePadding
+                    style={{ borderLeft: '4px solid red', marginTop: '10px' }} // Add this line to include the red vertical line
+                  >
+                    <ListItemButton onClick={() => setSubmenuIndex(submenuIndex === index ? null : index)}>
+                      <ListItemAvatar>
+                        <Avatar
+                          alt={`Avatar ${config.logo_names[index]}`}
+                          src={`https://financialmodelingprep.com/image-stock/${config.logo_names[index]}.png`}
+                        />
+                      </ListItemAvatar>
                       {editIndex === index ? (
-                        <IconButton edge="end" aria-label="save" onClick={handleSave}>
-                          <CheckIcon />
-                        </IconButton>
+                        <TextField
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
                       ) : (
-                        <IconButton edge="end" aria-label="edit" onClick={handleEdit(index)}>
-                          <EditIcon style={{ color: 'white' }} />
-                        </IconButton>
+                        <ListItemText id={labelId} primary={`${value}`} />
                       )}
-                      <IconButton edge="end" aria-label="delete" onClick={() => handleDelete(value)}>
-                        <DeleteIcon />
-                      </IconButton>
+                    </ListItemButton>
+                  </ListItem>
+                  {submenuIndex === index && (
+                    <div style={{ padding: '10px 20px' }}>
+                      <FinnhubSearch
+                        fullWidth
+                        placeholder="Finnhub search"
+                        margin="dense"
+                        defaultValue={config.api_names[index]} // Pass default value here
+                        onSearchResult={(apiName) => handleSubmenuChange(index, apiName, submenuChanges[index]?.logoName)}
+                      />
+                      <IconSearch
+                        fullWidth
+                        placeholder="FMP Icon search"
+                        margin="dense"
+                        defaultValue={config.logo_names[index]} // Pass default value here
+                        onSearchResult={(logoName) => handleSubmenuChange(index, submenuChanges[index]?.apiName, logoName)}
+                      />
+                      <Button onClick={() => handleSubmenuClose(index)}>Save</Button>
                     </div>
-                  }
-                  disablePadding
-                >
-                  <ListItemButton>
-                    <ListItemAvatar>
-                      <Avatar
-                        alt={`Avatar ${value}`}
-                        src={`https://financialmodelingprep.com/image-stock/${value}.png`}
-                      />
-                    </ListItemAvatar>
-                    {editIndex === index ? (
-                      <TextField
-                        value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
-                      />
-                    ) : (
-                      <ListItemText id={labelId} primary={`${value}`} />
-                    )}
-                  </ListItemButton>
-                </ListItem>
+                  )}
+                </div>
               );
             })}
             <Stack spacing={2} direction="column" alignItems="center" marginTop="20px">
