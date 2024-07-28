@@ -2,7 +2,8 @@ package com.project.stockTickerWeb.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
-import java.util.List;
+import java.security.SecureRandom;
+import java.util.Base64;
 
 @Entity
 @Table(name = "users")
@@ -17,6 +18,9 @@ public class User {
 
     @NotEmpty
     private String password;
+
+    @Column(unique = true)
+    private String apiKey;
 
     public User() {
     }
@@ -45,5 +49,20 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getApiKey() {
+        return apiKey;
+    }
+
+    public void setApiKey(String apiKey) {
+        this.apiKey = apiKey;
+    }
+
+    public static String generateApiKey() {
+        SecureRandom secureRandom = new SecureRandom();
+        byte[] key = new byte[24]; // 192 bits
+        secureRandom.nextBytes(key);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(key);
     }
 }

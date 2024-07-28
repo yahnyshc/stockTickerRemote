@@ -84,7 +84,7 @@ const ConfigSwitch = () => {
             flexDirection: 'column',
             marginTop: '20px'
     }}>
-        <ConfigsTitle sx={{ width: '80%' }}>
+        <ConfigsTitle sx={{ width: '70%' }}>
             <h3 style={{ margin: '0px' }}>Configs</h3>
             <NewConfigButton onClick={() => createNewConfig()} />
         </ConfigsTitle>
@@ -96,10 +96,10 @@ const ConfigSwitch = () => {
             variant="scrollable"
             scrollButtons="auto"
             aria-label="scrollable prevent tabs example"
-            sx={{ maxWidth: '80%' }}
+            sx={{ maxWidth: '70%' }}
           >
             {tabs.map((tab) => (
-              <Tab key={tab.id} label={tab.name} value={tab.id} />
+              <Tab key={tab.id} label={tab.name} value={tab.id}/>
             ))}
           </Tabs>
         </Box>

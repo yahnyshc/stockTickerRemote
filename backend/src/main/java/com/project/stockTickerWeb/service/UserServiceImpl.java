@@ -74,6 +74,7 @@ public class UserServiceImpl implements UserService {
         User user = new User();
         user.setUsername(username);
         user.setPassword(hashedPassword);
+        user.setApiKey(generateUniqueApiKey());
 
         userRepository.save(user);
 
@@ -100,5 +101,40 @@ public class UserServiceImpl implements UserService {
                 password.chars().anyMatch(Character::isLowerCase) &&
                 password.chars().anyMatch(Character::isDigit) &&
                 password.chars().anyMatch(ch -> "!@#$%^&*()_+[]{}|;:,.<>?".indexOf(ch) >= 0);
+    }
+
+    private String generateUniqueApiKey() {
+        String apiKey;
+        do {
+            apiKey = User.generateApiKey();
+        } while (userRepository.existsByApiKey(apiKey));
+        return apiKey;
+    }
+
+    public String getApiKey(int userId) {
+        Optional<User> u = userRepository.findById(userId);
+        if (u.isPresent()){
+            return u.get().getApiKey();
+        }
+        else{
+            throw new RuntimeException("User doesn't exist");
+        }
+    }
+
+    public String regenerateApiKey(int userId) {
+        Optional<User> u = userRepository.findById(userId);
+        if (u.isPresent()){
+            User user = u.get();
+            user.setApiKey(generateUniqueApiKey());
+            userRepository.save(user);
+            return user.getApiKey();
+        }
+        else{
+            throw new RuntimeException("User doesn't exist");
+        }
+    }
+
+    public void delete(int userId){
+        userRepository.deleteById(userId);
     }
 }

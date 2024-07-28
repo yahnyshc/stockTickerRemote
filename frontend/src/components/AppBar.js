@@ -51,12 +51,11 @@ export default function Appbar() {
             open={Boolean(anchorEl)}
             onClose={handleMenuClose}
           >
-            <MenuItem onClick={handleMenuClose}>Profile</MenuItem>
-            <MenuItem onClick={handleMenuClose}>Control</MenuItem>
-            <MenuItem onClick={handleMenuClose}>Logout</MenuItem>
+            <MenuItem onClick={handleMenuClose}><Link to="/profile" style={{ textDecoration: 'none', color: 'black' }}>Profile</Link></MenuItem>
+            <MenuItem onClick={handleMenuClose}><Link to="/" style={{ textDecoration: 'none', color: 'black' }}>Control</Link></MenuItem>
           </Menu>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontSize: '1.5rem', marginLeft: '3%', fontFamily: 'Arial, sans-serif', fontWeight: 'bold' }}>
-            Ticker Controller
+            <Link to="/" style={{ textDecoration: 'none', color: 'white' }}>Ticker Controller</Link>
           </Typography>
           <div style={{ marginRight: '0%' }}>
             <h4 style={{ margin: '0 0 5px 0px' }}>{user && `${user.username}`}</h4>

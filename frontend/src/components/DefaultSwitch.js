@@ -29,7 +29,7 @@ const Root = styled('span')(
   position: relative;
   display: inline-block;
   width: 30px;
-  height: 18px;
+  height: 19px;
   margin: 10px;
   cursor: pointer;
 
@@ -71,7 +71,7 @@ const Root = styled('span')(
     width: 12px;
     height: 12px;
     top: 3px;
-    left: 4px;
+    left: 3px;
     border-radius: 16px;
     background-color: #000;
     position: relative;
@@ -86,7 +86,7 @@ const Root = styled('span')(
   &.${switchClasses.checked} {
     .${switchClasses.thumb} {
       top: 3px;
-      left: 15px;
+      left: 14px;
       background-color: #fff;
       box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.3);
     }
