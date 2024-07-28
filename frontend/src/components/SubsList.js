@@ -7,13 +7,17 @@ import ListItemAvatar from '@mui/material/ListItemAvatar';
 import Avatar from '@mui/material/Avatar';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
-import { Container, Paper, TextField, IconButton, FormControlLabel, Checkbox } from '@mui/material';
+import { Container, Paper, TextField, IconButton } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import CheckIcon from '@mui/icons-material/Check';
 import { useConfigContext } from '../hooks/useConfigContext';
 import FinnhubSearch from './FinnhubSearch';
 import IconSearch from './IconSearch';
+import { useAuthContext } from '../hooks/useAuthContext';
+import DefaultSwitch from './DefaultSwitch';
+import Tooltip from '@mui/material/Tooltip';
+import CloseIcon from '@mui/icons-material/Close';
 
 const SubsList = () => {
   const { configs, selected, dispatch } = useConfigContext();
@@ -25,8 +29,10 @@ const SubsList = () => {
   const [configNameValue, setConfigNameValue] = React.useState(selected ? selected.name : '');
   const [updatingConfig, setUpdatingConfig] = React.useState(false);
   const [submenuIndex, setSubmenuIndex] = React.useState(null);
-  const [config, setConfig] = React.useState(selected)
+  const [config, setConfig] = React.useState(selected);
   const [submenuChanges, setSubmenuChanges] = React.useState({});
+
+  const { user } = useAuthContext();
 
   React.useEffect(() => {
     if (selected) {
@@ -47,7 +53,7 @@ const SubsList = () => {
       ...config,
       subs: config.subs.filter((sub) => sub !== toDelete),
       api_names: config.api_names.filter((_, i) => i !== index),
-      logo_names: config.logo_names.filter((_, i) => i !== index)
+      logo_names: config.logo_names.filter((_, i) => i !== index),
     });
   };
 
@@ -62,7 +68,7 @@ const SubsList = () => {
     setUpdatingConfig(true);
     setConfig({
       ...config,
-      subs: [...config.subs.slice(0, editIndex), editValue, ...config.subs.slice(editIndex + 1)]
+      subs: [...config.subs.slice(0, editIndex), editValue, ...config.subs.slice(editIndex + 1)],
     });
     setEditIndex(null);
     setEditValue('');
@@ -70,16 +76,16 @@ const SubsList = () => {
 
   const handleActiveChange = async (event) => {
     if (event.target.checked === true) {
-      console.log("Setting current");
       const clearCurrent = (c) => {
         if (c.current === true) {
           c.current = false;
           dispatch({ type: 'UPDATE_CONFIG', payload: c });
-          fetch(`${process.env.REACT_APP_BACKEND_URL}/config/edit`, {
+          fetch(`${process.env.REACT_APP_BACKEND_URL}/config/edit?userId=${user.id}`, {
             method: 'PATCH',
             body: JSON.stringify(c),
             headers: {
               'Content-Type': 'application/json',
+              'Authorization': `Bearer ${user.token}`,
             },
           });
         }
@@ -95,7 +101,7 @@ const SubsList = () => {
   };
 
   React.useEffect(() => {
-    console.log("Configs changed:  ", configs);
+    console.log('Configs changed:  ', configs);
   }, [configs]);
 
   const handleAddNew = React.useCallback(async () => {
@@ -105,7 +111,7 @@ const SubsList = () => {
         ...config,
         subs: [...config.subs, newSub],
         api_names: [...config.api_names, newSub],
-        logo_names: [...config.logo_names, newSub]
+        logo_names: [...config.logo_names, newSub],
       });
       setShowNewSubField(false);
       setNewSub('');
@@ -113,16 +119,17 @@ const SubsList = () => {
   }, [newSub, config]);
 
   React.useEffect(() => {
-    console.log("Config updated: ", config);
+    console.log('Config updated: ', config);
     dispatch({ type: 'UPDATE_CONFIG', payload: config });
 
     const updateConfig = async () => {
       try {
-        await fetch(`${process.env.REACT_APP_BACKEND_URL}/config/edit`, {
+        await fetch(`${process.env.REACT_APP_BACKEND_URL}/config/edit?userId=${user.id}`, {
           method: 'PATCH',
           body: JSON.stringify(config),
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${user.token}`,
           },
         });
       } catch (error) {
@@ -134,8 +141,7 @@ const SubsList = () => {
       updateConfig();
       setUpdatingConfig(false);
     }
-
-  }, [config, dispatch, updatingConfig]);
+  }, [config, dispatch, updatingConfig, user.id, user.token]);
 
   const handleConfigNameEdit = () => {
     setEditConfigName(true);
@@ -150,15 +156,13 @@ const SubsList = () => {
   const handleSubmenuChange = (index, apiName, logoName) => {
     setSubmenuChanges({
       ...submenuChanges,
-      [index]: { apiName, logoName }
+      [index]: { apiName, logoName },
     });
   };
 
   const handleSubmenuClose = (index) => {
-    console.log("Saving mappings");
     if (submenuChanges[index]) {
       const { apiName, logoName } = submenuChanges[index];
-      console.log("apiName: ", apiName, " logoName: ", logoName);
       setUpdatingConfig(true);
       const newApiNames = [...config.api_names];
       const newLogoNames = [...config.logo_names];
@@ -167,65 +171,124 @@ const SubsList = () => {
       setConfig({
         ...config,
         api_names: newApiNames,
-        logo_names: newLogoNames
+        logo_names: newLogoNames,
       });
     }
     setSubmenuIndex(null);
   };
 
-  const paperStyle = { padding: "10px 10px", width: "80%", margin: "20px auto", position: 'relative' };
+  const handleDeleteConfig = async () => {
+    if (!user || !user.id || !user.token) {
+      console.error("User is not authenticated");
+      return;
+    }
+ 
+    try {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/config/delete?userId=${user.id}`, {
+        method: 'DELETE',
+        body: JSON.stringify(config),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user.token}`
+        },
+      });
+  
+      const json = await response.json();
+  
+      if (response.ok) {
+        dispatch({ type: 'DELETE_CONFIG', payload: json });
+      } else {
+        console.error("Failed to create new config:", json);
+      }
+    } catch (error) {
+      console.error("An error occurred while creating new config:", error);
+    }
+  };
+
+  const paperStyle = { padding: '10px 10px', width: '80%', margin: '10px auto', position: 'relative' };
 
   return (
     <Container>
       <Paper elevation={3} style={paperStyle}>
-        <div 
+        <div
           style={{
-            display: 'flex', 
-            justifyContent: "center", 
-            textAlign: 'center', 
-            alignItems: 'center', 
+            display: 'flex',
+            justifyContent: 'center',
+            textAlign: 'center',
+            alignItems: 'center',
             border: '1px solid black',
             borderRadius: '10px',
             backgroundColor: '#292929',
             marginBottom: '10px',
             color: 'white',
             position: 'relative',
-            padding: '20px'
-          }}>
+            padding: '20px',
+          }}
+        >
+          <DefaultSwitch
+            checked={config.current}
+            onChange={(event) => handleActiveChange(event)}
+            inputProps={{ 'aria-label': 'controlled' }}
+            label="Default Config"
+            sx={{ position: 'absolute', left: '0px', top: '0px' }}
+          />
+          <Tooltip title="Delete Config" arrow>
+            <IconButton
+              edge="end"
+              aria-label="delete"
+              onClick={handleDeleteConfig}
+              style={{ position: 'absolute', left: '0px', bottom: '0px' }}
+            >
+              <DeleteIcon style={{ color: 'red' }} />
+            </IconButton>
+          </Tooltip>
           {editConfigName ? (
             <TextField
               value={configNameValue}
               onChange={(e) => setConfigNameValue(e.target.value)}
-              style={{ 
-                flex: 1, 
-                textAlign: 'center', 
-                color: 'white', 
-                fontSize: '2rem', 
+              style={{
+                textAlign: 'center',
+                color: 'white',
+                fontSize: '2rem',
                 backgroundColor: '#292929',
-                border: 'none'
+                border: 'none',
+                marginTop: '20px',
+                marginBottom: '20px',
               }}
               inputProps={{
                 style: {
                   textAlign: 'center',
                   color: 'white',
-                  fontSize: '2rem'
-                }
+                  fontSize: '2rem',
+                },
               }}
             />
           ) : (
-            <h1 style={{ flex: 1, position: 'relative' }}>{configNameValue}</h1>
+            <h1>{configNameValue}</h1>
           )}
           {editConfigName ? (
-            <IconButton edge="end" aria-label="save" onClick={handleConfigNameSave}>
+            <IconButton
+              edge="end"
+              aria-label="save"
+              onClick={handleConfigNameSave}
+              style={{ position: 'absolute', right: '10px', top: '0px' }}
+            >
               <CheckIcon style={{ color: 'white' }} />
             </IconButton>
           ) : (
-            <IconButton edge="end" aria-label="edit" onClick={handleConfigNameEdit}>
-              <EditIcon style={{ color: 'white', position: 'absolute', right: '10px'}} />
-            </IconButton>
+            <Tooltip title="Edit Config Name" arrow>
+              <IconButton
+                edge="end"
+                aria-label="edit"
+                onClick={handleConfigNameEdit}
+                style={{ position: 'absolute', right: '10px', top: '0px' }}
+              >
+                <EditIcon style={{ color: 'white' }} />
+              </IconButton>
+            </Tooltip>
           )}
         </div>
-        <Container sx={{ width: '100%', display: "flex", justifyContent: "center" }}>
+        <Container sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
           <List dense sx={{ width: '100%', bgcolor: 'background.paper' }}>
             {config.subs.map((value, index) => {
               const labelId = `checkbox-list-secondary-label-${value}`;
@@ -292,7 +355,7 @@ const SubsList = () => {
               );
             })}
             <Stack spacing={2} direction="column" alignItems="center" marginTop="20px">
-              {showNewSubField &&
+              {showNewSubField && (
                 <div>
                   <TextField
                     value={newSub}
@@ -300,21 +363,30 @@ const SubsList = () => {
                     placeholder="New subscription"
                   />
                 </div>
-              }
-              <Button 
-                sx={{
-                  backgroundColor: '#292929',
-                }}
-                variant="contained" 
-                onClick={showNewSubField ? handleAddNew : handleAddNewClick}>
-                Add new subscription
-              </Button>
-              <div >
-              <FormControlLabel
-                  control={<Checkbox checked={config.current} onChange={(event) => handleActiveChange(event)} />}
-                  label="Default Config"
-                />
-            </div>
+              )}
+              <div style={{ position: 'relative', width: '100%' }}>
+                <Button
+                  sx={{ backgroundColor: '#1976d2', marginLeft: showNewSubField ? '4%' : '0' }}
+                  variant="contained"
+                  onClick={showNewSubField ? handleAddNew : handleAddNewClick}
+                >
+                  Add new subscription
+                </Button>
+                {showNewSubField && (
+                  <IconButton
+                    sx={{
+                      backgroundColor: '#ffffff',
+                      color: '#000',
+                      margin: '5px 0 5px 5px',
+                      width: '30px',
+                      height: '30px',
+                    }}
+                    onClick={() => setShowNewSubField(false)}
+                  >
+                    <CloseIcon />
+                  </IconButton>
+                )}
+              </div>
             </Stack>
           </List>
         </Container>

@@ -1,14 +1,21 @@
 import { useEffect } from 'react';
 import { useConfigContext } from '../hooks/useConfigContext';
-import Appbar from '../components/AppBar.js';
+import { useAuthContext } from '../hooks/useAuthContext';
 import ConfigSwitch from '../components/ConfigSwitch.js';
 
 const Home = () => {
     const { dispatch } = useConfigContext();
+    const {user} = useAuthContext()
 
     useEffect(() => {
         const fetchConfigs = async () => {
-            const response = await fetch((process.env.REACT_APP_BACKEND_URL)+'/config/getAll');
+            const response = await fetch(
+                `${process.env.REACT_APP_BACKEND_URL}/config/getAll?userId=${user.id}`, {
+                method: 'GET',
+                headers: {
+                  'Authorization': `Bearer ${user.token}`
+                },
+            });
             const json = await response.json();
 
             if (response.ok){
@@ -19,16 +26,17 @@ const Home = () => {
 
         console.log("Use effect was called");
 
-        fetchConfigs();
+        if (user){
+            fetchConfigs();
+        }
         
-    }, [dispatch]);
+    }, [dispatch, user]);
 
     console.log("Home component rendered");
 
     return (
         <div className="home">
             <div className="configs">
-                <Appbar />
                 <ConfigSwitch />
             </div>
         </div>

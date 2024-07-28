@@ -1,7 +1,6 @@
 package com.project.stockTickerWeb.model;
 
 import jakarta.persistence.*;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -10,14 +9,26 @@ public class Config {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
+
     private String name;
+
+    @ElementCollection
     private List<String> subs;
+
+    @ElementCollection
     private List<String> api_names;
+
+    @ElementCollection
     private List<String> logo_names;
+
     private boolean current;
 
     @Column(name = "last_touched")
     private LocalDateTime lastTouched;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @PrePersist
     @PreUpdate
@@ -25,8 +36,10 @@ public class Config {
         this.lastTouched = LocalDateTime.now();
     }
 
-    public Config(){
+    public Config() {
     }
+
+    // getters and setters
 
     public int getId() {
         return id;
@@ -56,7 +69,9 @@ public class Config {
         return current;
     }
 
-    public void setCurrent(boolean current) { this.current = current; }
+    public void setCurrent(boolean current) {
+        this.current = current;
+    }
 
     public LocalDateTime getLastTouched() {
         return lastTouched;
@@ -80,5 +95,13 @@ public class Config {
 
     public void setLogo_names(List<String> logo_names) {
         this.logo_names = logo_names;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 }

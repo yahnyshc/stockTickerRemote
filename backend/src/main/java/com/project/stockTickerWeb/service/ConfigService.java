@@ -5,7 +5,8 @@ import com.project.stockTickerWeb.model.Config;
 import java.util.List;
 
 public interface ConfigService {
-    public Config saveConfig(Config config);
-    public List<Config> getAllConfigs();
-    public Config updateConfig(Config config);
+    public Config saveConfig(Config config, int userId);
+    public List<Config> getAllConfigs(int userId);
+    public Config updateConfig(Config config, int userId);
+    public Config deleteConfig(Config config, int userId);
 }
