@@ -137,4 +137,8 @@ public class UserServiceImpl implements UserService {
     public void delete(int userId){
         userRepository.deleteById(userId);
     }
+
+    public User findByApiKey(String apiKey){
+        return userRepository.findByApiKey(apiKey);
+    }
 }

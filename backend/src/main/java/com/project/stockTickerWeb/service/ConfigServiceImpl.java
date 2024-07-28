@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ConfigServiceImpl implements ConfigService{
@@ -60,5 +61,21 @@ public class ConfigServiceImpl implements ConfigService{
         config.setUser(user);
         configRepository.delete(existingConfig);
         return config;
+    }
+
+    public Config getCurrentConfig(int userId){
+        Config config = configRepository.findByUserIdAndCurrentTrue(userId);
+        if (config != null){
+            System.out.println("Found the config "+config.getId());
+        }
+        else{
+            System.out.println("Config not found");
+        }
+        return config;
+    }
+
+    public Config getConfigById(int configId){
+        Optional<Config> c = configRepository.findById(configId);
+        return c.orElse(null);
     }
 }

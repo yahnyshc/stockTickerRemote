@@ -12,4 +12,5 @@ public interface UserService {
     public String getApiKey(int userId);
     public String regenerateApiKey(int userId);
     public void delete(int userId);
+    public User findByApiKey(String apiKey);
 }

@@ -2,6 +2,7 @@ package com.project.stockTickerWeb.controller;
 
 import com.project.stockTickerWeb.model.Config;
 import com.project.stockTickerWeb.service.ConfigService;
+import com.project.stockTickerWeb.websocket.WebSocketHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,6 +14,9 @@ public class ConfigController {
     @Autowired
     private ConfigService configService;
 
+    @Autowired
+    private WebSocketHandler webSocketHandler;
+
     @CrossOrigin
     @PostMapping("/add")
     public Config add(@RequestBody Config config, @RequestParam int userId){
@@ -22,6 +26,10 @@ public class ConfigController {
     @CrossOrigin
     @PatchMapping("/edit")
     public Config edit(@RequestBody Config config, @RequestParam int userId){
+        Config prevConfig = configService.getConfigById(config.getId());
+        if ( config.isCurrent() ){
+            webSocketHandler.sendConfigUpdate(config);
+        }
         return configService.updateConfig(config, userId);
     }
 

@@ -12,4 +12,5 @@ public interface ConfigRepository extends JpaRepository<Config, Integer> {
 
     List<Config> findAllByUserOrderByLastTouchedDesc(User user);
     void delete(Config config);
+    Config findByUserIdAndCurrentTrue(int userId);
 }
