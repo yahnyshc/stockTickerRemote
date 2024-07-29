@@ -8,11 +8,15 @@ import SubsList from './SubsList';
 import { useConfigContext } from '../hooks/useConfigContext';
 import NewConfigButton from './NewConfigButton';
 import { useAuthContext } from '../hooks/useAuthContext';
+import { useTheme } from '@mui/material/styles';
 
 const ConfigSwitch = () => {
   const { configs, selected, dispatch } = useConfigContext();
   const [selectedTab, setSelectedTab] = React.useState(selected ? selected.id : null);
   const [tabs, setTabs] = React.useState(configs || []);
+  const [tabWidth, setTabWidth] = React.useState(0);
+  const theme = useTheme();
+  const tabsRef = React.useRef(null)
   const { user } = useAuthContext();
 
   React.useEffect(() => {
@@ -32,6 +36,22 @@ const ConfigSwitch = () => {
     }
   }, [selected, user]);
 
+  React.useEffect(() => {
+    const handleResize = () => {
+      if (tabsRef.current) {
+        const parentWidth = tabsRef.current.clientWidth;
+        const newTabWidth = parentWidth / tabs.length;
+        setTabWidth(newTabWidth);
+      }
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [tabs.length]);
+
   const handleTabChange = (event, newValue) => {
     const newSelectedTab = tabs.find(tab => tab.id === newValue);
     if (newSelectedTab) {
@@ -49,7 +69,8 @@ const ConfigSwitch = () => {
       name: 'New Config',
       subs: [],
       api_names: [],
-      logo_names: []
+      logo_names: [],
+      switch_time: 5
     };
   
     try {
@@ -84,24 +105,42 @@ const ConfigSwitch = () => {
             flexDirection: 'column',
             marginTop: '20px'
     }}>
-        <ConfigsTitle sx={{ width: '70%' }}>
+        <ConfigsTitle sx={{ width: '90%' }}>
             <h3 style={{ margin: '0px' }}>Configs</h3>
             <NewConfigButton onClick={() => createNewConfig()} />
         </ConfigsTitle>
-        
-        <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-          <Tabs
-            value={selectedTab}
-            onChange={handleTabChange}
-            variant="scrollable"
-            scrollButtons="auto"
-            aria-label="scrollable prevent tabs example"
-            sx={{ maxWidth: '70%' }}
-          >
-            {tabs.map((tab) => (
-              <Tab key={tab.id} label={tab.name} value={tab.id}/>
-            ))}
-          </Tabs>
+        <Box sx={{ display: 'flex', justifyContent: 'center', width: '90%' }}>
+          <div style={{ width: '100%' }}>
+            <Tabs
+              ref={tabsRef}
+              value={selectedTab}
+              onChange={handleTabChange}
+              variant="scrollable"
+              scrollButtons="auto"
+              aria-label="scrollable prevent tabs example"
+              sx={{ 
+                '.MuiTabs-scroller': {
+                  borderBottom: `1px solid ${theme.palette.grey[50]}`,
+                },
+                '.MuiTab-root': {
+                  textTransform: 'none',
+                  minWidth: `${tabWidth}px`,
+                  maxWidth: `${tabWidth}px`,
+                },
+                '.Mui-selected': {
+                  color: `${theme.palette.primary[400]} !important`,
+                  fontWeight: 'bold',
+                },
+                '.MuiTabs-indicator': {
+                  backgroundColor: theme.palette.primary[400],
+                },
+              }}
+            >
+              {tabs.map((tab) => (
+                <Tab key={tab.id} label={tab.name} value={tab.id}/>
+              ))}
+            </Tabs>
+          </div>
         </Box>
         {tabs.map(tab => (
           <TabPanel key={tab.id} value={selectedTab} selectedTab={tab.id}>

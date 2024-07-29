@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import TextField from '@mui/material/TextField';
-import Stack from '@mui/material/Stack';
 import Autocomplete from '@mui/material/Autocomplete';
 
 export default function IconSearch({ defaultValue, onSearchResult }) {
@@ -32,8 +31,8 @@ export default function IconSearch({ defaultValue, onSearchResult }) {
   };
 
   return (
-    <Stack spacing={2} sx={{ marginTop: '10px' }}>
       <Autocomplete
+        sx={{ marginTop: '10px' }}
         freeSolo
         id="free-solo-2-demo"
         disableClearable
@@ -52,7 +51,6 @@ export default function IconSearch({ defaultValue, onSearchResult }) {
           />
         )}
       />
-    </Stack>
   );
 }
 

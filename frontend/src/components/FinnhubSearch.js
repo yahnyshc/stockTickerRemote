@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import TextField from '@mui/material/TextField';
-import Stack from '@mui/material/Stack';
 import Autocomplete from '@mui/material/Autocomplete';
 
-export default function FinnhubSearch({ defaultValue, onSearchResult }) {
+export default function FinnhubSearch({ defaultValue, onSearchResult, sx }) {
   const [stocks, setStocks] = useState([]);
   const [inputValue, setInputValue] = useState(defaultValue || '');
   const [selectedValue, setSelectedValue] = useState(null);
@@ -28,8 +27,8 @@ export default function FinnhubSearch({ defaultValue, onSearchResult }) {
   }, [selectedValue, onSearchResult]);
 
   return (
-    <Stack spacing={2}>
       <Autocomplete
+        sx={sx}
         freeSolo
         id="free-solo-1-demo"
         disableClearable
@@ -52,7 +51,6 @@ export default function FinnhubSearch({ defaultValue, onSearchResult }) {
           />
         )}
       />
-    </Stack>
   );
 }
 

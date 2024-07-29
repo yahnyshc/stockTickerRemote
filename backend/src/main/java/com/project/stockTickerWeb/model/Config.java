@@ -1,6 +1,8 @@
 package com.project.stockTickerWeb.model;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.ColumnDefault;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -29,6 +31,9 @@ public class Config {
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
+    @ColumnDefault("5")
+    private int switch_time;
 
     @PrePersist
     @PreUpdate
@@ -103,5 +108,13 @@ public class Config {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public int getSwitch_time() {
+        return switch_time;
+    }
+
+    public void setSwitch_time(int switch_time) {
+        this.switch_time = switch_time;
     }
 }

@@ -7,7 +7,7 @@ import ListItemAvatar from '@mui/material/ListItemAvatar';
 import Avatar from '@mui/material/Avatar';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
-import { Container, Paper, TextField, IconButton } from '@mui/material';
+import { Container, Paper, TextField, IconButton, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Tooltip, Slider } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import CheckIcon from '@mui/icons-material/Check';
@@ -16,7 +16,6 @@ import FinnhubSearch from './FinnhubSearch';
 import IconSearch from './IconSearch';
 import { useAuthContext } from '../hooks/useAuthContext';
 import DefaultSwitch from './DefaultSwitch';
-import Tooltip from '@mui/material/Tooltip';
 import CloseIcon from '@mui/icons-material/Close';
 
 const SubsList = () => {
@@ -26,13 +25,31 @@ const SubsList = () => {
   const [newSub, setNewSub] = React.useState('');
   const [showNewSubField, setShowNewSubField] = React.useState(false);
   const [editConfigName, setEditConfigName] = React.useState(false);
-  const [configNameValue, setConfigNameValue] = React.useState(selected ? selected.name : '');
-  const [updatingConfig, setUpdatingConfig] = React.useState(false);
+  const [configNameValue, setConfigNameValue] = React.useState('');
   const [submenuIndex, setSubmenuIndex] = React.useState(null);
   const [config, setConfig] = React.useState(selected);
   const [submenuChanges, setSubmenuChanges] = React.useState({});
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
 
   const { user } = useAuthContext();
+
+  const updateConfig = async (newConfig) => {
+    try {
+      await fetch(`${process.env.REACT_APP_BACKEND_URL}/config/edit?userId=${user.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(newConfig),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user.token}`,
+        },
+      });
+
+      dispatch({ type: 'UPDATE_CONFIG', payload: newConfig });
+      setConfig(newConfig);
+    } catch (error) {
+      console.error('Error updating config:', error);
+    }
+  };
 
   React.useEffect(() => {
     if (selected) {
@@ -47,9 +64,8 @@ const SubsList = () => {
   }, [selected]);
 
   const handleDelete = async (toDelete) => {
-    setUpdatingConfig(true);
     const index = config.subs.indexOf(toDelete);
-    setConfig({
+    await updateConfig({
       ...config,
       subs: config.subs.filter((sub) => sub !== toDelete),
       api_names: config.api_names.filter((_, i) => i !== index),
@@ -60,16 +76,26 @@ const SubsList = () => {
   const handleEdit = (index) => (event) => {
     event.stopPropagation();
     setEditIndex(index);
+    setSubmenuIndex(index);
     setEditValue(config.subs[index]);
   };
 
-  const handleSave = async (event) => {
-    event.stopPropagation();
-    setUpdatingConfig(true);
-    setConfig({
+  const handleSave = () => {
+    const updatedSubs = [...config.subs];
+    updatedSubs[editIndex] = editValue;
+
+    console.log(updatedSubs);
+
+    const updatedConfig = {
       ...config,
-      subs: [...config.subs.slice(0, editIndex), editValue, ...config.subs.slice(editIndex + 1)],
-    });
+      subs: updatedSubs 
+    };
+
+    console.log("Subs: " + updatedConfig.subs);
+    
+    updateConfig(updatedConfig);
+    // Close submenu and reset edit states
+    handleSubmenuClose(editIndex);
     setEditIndex(null);
     setEditValue('');
   };
@@ -91,8 +117,7 @@ const SubsList = () => {
         }
       };
       configs.forEach(clearCurrent);
-      setUpdatingConfig(true);
-      setConfig({ ...config, current: true });
+      await updateConfig({ ...config, current: true });
     }
   };
 
@@ -104,10 +129,9 @@ const SubsList = () => {
     console.log('Configs changed:  ', configs);
   }, [configs]);
 
-  const handleAddNew = React.useCallback(async () => {
+  const handleAddNew = async () => {
     if (newSub && !config.subs.includes(newSub)) {
-      setUpdatingConfig(true);
-      setConfig({
+      await updateConfig({
         ...config,
         subs: [...config.subs, newSub],
         api_names: [...config.api_names, newSub],
@@ -116,40 +140,14 @@ const SubsList = () => {
       setShowNewSubField(false);
       setNewSub('');
     }
-  }, [newSub, config]);
-
-  React.useEffect(() => {
-    console.log('Config updated: ', config);
-    dispatch({ type: 'UPDATE_CONFIG', payload: config });
-
-    const updateConfig = async () => {
-      try {
-        await fetch(`${process.env.REACT_APP_BACKEND_URL}/config/edit?userId=${user.id}`, {
-          method: 'PATCH',
-          body: JSON.stringify(config),
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${user.token}`,
-          },
-        });
-      } catch (error) {
-        console.error('Error updating config:', error);
-      }
-    };
-
-    if (updatingConfig) {
-      updateConfig();
-      setUpdatingConfig(false);
-    }
-  }, [config, dispatch, updatingConfig, user.id, user.token]);
+  };
 
   const handleConfigNameEdit = () => {
     setEditConfigName(true);
   };
 
   const handleConfigNameSave = async () => {
-    setUpdatingConfig(true);
-    setConfig({ ...config, name: configNameValue });
+    await updateConfig({ ...config, name: configNameValue });
     setEditConfigName(false);
   };
 
@@ -163,26 +161,35 @@ const SubsList = () => {
   const handleSubmenuClose = (index) => {
     if (submenuChanges[index]) {
       const { apiName, logoName } = submenuChanges[index];
-      setUpdatingConfig(true);
       const newApiNames = [...config.api_names];
       const newLogoNames = [...config.logo_names];
       newApiNames[index] = apiName;
       newLogoNames[index] = logoName;
-      setConfig({
+      const updatedConfig = {
         ...config,
         api_names: newApiNames,
         logo_names: newLogoNames,
-      });
+      };
+      updateConfig(updatedConfig);
     }
     setSubmenuIndex(null);
   };
 
-  const handleDeleteConfig = async () => {
+  const handleSwitchTimeChange = (event, value) => {
+    setConfig({ ...config, switch_time: value });
+  };
+
+  const handleSwitchTimeChangeCommitted = async (event, value) => {
+    console.log("Switch time change committed")
+    await updateConfig({ ...config, switch_time: value });
+  };
+
+  const confirmDeleteConfig = async () => {
     if (!user || !user.id || !user.token) {
       console.error("User is not authenticated");
       return;
     }
- 
+
     try {
       const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/config/delete?userId=${user.id}`, {
         method: 'DELETE',
@@ -192,20 +199,25 @@ const SubsList = () => {
           'Authorization': `Bearer ${user.token}`
         },
       });
-  
+
       const json = await response.json();
-  
+
       if (response.ok) {
         dispatch({ type: 'DELETE_CONFIG', payload: json });
+        dispatch({ type: 'SET_SELECTED', payload: configs[0] });
       } else {
         console.error("Failed to create new config:", json);
       }
     } catch (error) {
-      console.error("An error occurred while creating new config:", error);
+      console.error("An error occurred while deleting a config:", error);
     }
   };
 
-  const paperStyle = { padding: '10px 10px', width: '80%', margin: '10px auto', position: 'relative' };
+  const handleDeleteConfig = async () => {
+    setDeleteDialogOpen(true);
+  };
+
+  const paperStyle = { padding: '10px 10px', width: '90%', margin: '10px auto', position: 'relative' };
 
   return (
     <Container>
@@ -222,7 +234,7 @@ const SubsList = () => {
             marginBottom: '10px',
             color: 'white',
             position: 'relative',
-            padding: '20px',
+            padding: '10px',
           }}
         >
           <DefaultSwitch
@@ -230,18 +242,39 @@ const SubsList = () => {
             onChange={(event) => handleActiveChange(event)}
             inputProps={{ 'aria-label': 'controlled' }}
             label="Default Config"
-            sx={{ position: 'absolute', left: '0px', top: '0px' }}
+            sx={{ position: 'absolute', right: '0px', top: '0px' }}
           />
           <Tooltip title="Delete Config" arrow>
             <IconButton
               edge="end"
               aria-label="delete"
               onClick={handleDeleteConfig}
-              style={{ position: 'absolute', left: '0px', bottom: '0px' }}
+              style={{ position: 'absolute', right: '17px', top: '60px' }}
             >
-              <DeleteIcon style={{ color: 'red' }} />
+              <DeleteIcon style={{ color: '#DC143C' }} />
             </IconButton>
           </Tooltip>
+          {editConfigName ? (
+            <IconButton
+              edge="end"
+              aria-label="save"
+              onClick={handleConfigNameSave}
+              style={{ position: 'absolute', right: '17px', top: '30px' }}
+            >
+              <CheckIcon style={{ color: 'white' }} />
+            </IconButton>
+          ) : (
+            <Tooltip title="Edit Config Name" arrow>
+              <IconButton
+                edge="end"
+                aria-label="edit"
+                onClick={handleConfigNameEdit}
+                style={{ position: 'absolute', right: '17px', top: '30px' }}
+              >
+                <EditIcon style={{ color: 'white' }} />
+              </IconButton>
+            </Tooltip>
+          )}
           {editConfigName ? (
             <TextField
               value={configNameValue}
@@ -252,8 +285,8 @@ const SubsList = () => {
                 fontSize: '2rem',
                 backgroundColor: '#292929',
                 border: 'none',
-                marginTop: '20px',
-                marginBottom: '20px',
+                marginRight: '35px',
+                marginLeft: '35px',
               }}
               inputProps={{
                 style: {
@@ -266,30 +299,9 @@ const SubsList = () => {
           ) : (
             <h1>{configNameValue}</h1>
           )}
-          {editConfigName ? (
-            <IconButton
-              edge="end"
-              aria-label="save"
-              onClick={handleConfigNameSave}
-              style={{ position: 'absolute', right: '10px', top: '0px' }}
-            >
-              <CheckIcon style={{ color: 'white' }} />
-            </IconButton>
-          ) : (
-            <Tooltip title="Edit Config Name" arrow>
-              <IconButton
-                edge="end"
-                aria-label="edit"
-                onClick={handleConfigNameEdit}
-                style={{ position: 'absolute', right: '10px', top: '0px' }}
-              >
-                <EditIcon style={{ color: 'white' }} />
-              </IconButton>
-            </Tooltip>
-          )}
         </div>
         <Container sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
-          <List dense sx={{ width: '100%', bgcolor: 'background.paper' }}>
+          <List dense sx={{ width: '100%', bgcolor: 'background.paper', paddingTop: '0px' }}>
             {config.subs.map((value, index) => {
               const labelId = `checkbox-list-secondary-label-${value}`;
               return (
@@ -298,7 +310,7 @@ const SubsList = () => {
                     secondaryAction={
                       <div>
                         {editIndex === index ? (
-                          <IconButton edge="end" aria-label="save" onClick={handleSave}>
+                          <IconButton edge="end" aria-label="save" onClick={() => handleSave()}>
                             <CheckIcon />
                           </IconButton>
                         ) : (
@@ -324,7 +336,10 @@ const SubsList = () => {
                       {editIndex === index ? (
                         <TextField
                           value={editValue}
-                          onChange={(e) => setEditValue(e.target.value)}
+                          onChange={(e) => {
+                            console.log(e.target.value);
+                            setEditValue(e.target.value)}
+                          }
                           onClick={(e) => e.stopPropagation()}
                         />
                       ) : (
@@ -354,19 +369,20 @@ const SubsList = () => {
                 </div>
               );
             })}
+            
             <Stack spacing={2} direction="column" alignItems="center" marginTop="20px">
-              {showNewSubField && (
-                <div>
-                  <TextField
-                    value={newSub}
-                    onChange={(e) => setNewSub(e.target.value)}
+            {showNewSubField && (
+                  <FinnhubSearch
+                    margin="dense"
                     placeholder="New subscription"
+                    defaultValue={null} // Pass default value here
+                    onSearchResult={(sub) => setNewSub(sub)}
+                    sx={{ width: '200px' }}
                   />
-                </div>
               )}
               <div style={{ position: 'relative', width: '100%' }}>
                 <Button
-                  sx={{ backgroundColor: '#1976d2', marginLeft: showNewSubField ? '4%' : '0' }}
+                  sx={{ backgroundColor: '#292929', color: 'white', marginLeft: showNewSubField ? '4%' : '0' }}
                   variant="contained"
                   onClick={showNewSubField ? handleAddNew : handleAddNewClick}
                 >
@@ -386,11 +402,61 @@ const SubsList = () => {
                     <CloseIcon />
                   </IconButton>
                 )}
+                {config.subs && config.subs.length > 0 && (
+                  <div style={{ marginTop: '20px' }}>
+                    <h6 style={{ margin: '0' }}>Switch Speed (seconds)</h6>
+                      <Slider
+                        value={config.switch_time}
+                        onChange={handleSwitchTimeChange}
+                        onChangeCommitted={handleSwitchTimeChangeCommitted}
+                        aria-labelledby="continuous-slider"
+                        min={1}
+                        max={60}
+                        valueLabelDisplay="auto"
+                        sx={{ 
+                          width: '150px',
+                          color: 'black',
+                          '& .MuiSlider-thumb': {
+                            width: 12,
+                            height: 12,
+                          },
+                        }}  // Make the slider narrower
+                      />
+                  </div>
+                )}
               </div>
             </Stack>
           </List>
         </Container>
       </Paper>
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">Delete Configuration</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Are you sure you want to delete this configuration? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)} color="primary">
+            Cancel
+          </Button>
+          <Button
+            onClick={() => {
+              confirmDeleteConfig();
+              setDeleteDialogOpen(false);
+            }}
+            color="secondary"
+            autoFocus
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };
