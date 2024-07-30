@@ -45,6 +45,8 @@ const SubsList = () => {
       });
 
       dispatch({ type: 'UPDATE_CONFIG', payload: newConfig });
+      dispatch({type: 'U'})
+
       setConfig(newConfig);
     } catch (error) {
       console.error('Error updating config:', error);
@@ -80,25 +82,15 @@ const SubsList = () => {
     setEditValue(config.subs[index]);
   };
 
-  const handleSave = () => {
-    const updatedSubs = [...config.subs];
-    updatedSubs[editIndex] = editValue;
-
-    console.log(updatedSubs);
-
-    const updatedConfig = {
+  const handleSave = async () => {
+    updateConfig({
       ...config,
-      subs: updatedSubs 
-    };
-
-    console.log("Subs: " + updatedConfig.subs);
-    
-    updateConfig(updatedConfig);
-    // Close submenu and reset edit states
-    handleSubmenuClose(editIndex);
+      subs: [...config.subs.slice(0, editIndex), editValue, ...config.subs.slice(editIndex + 1)],
+    });
     setEditIndex(null);
     setEditValue('');
   };
+
 
   const handleActiveChange = async (event) => {
     if (event.target.checked === true) {
@@ -152,10 +144,13 @@ const SubsList = () => {
   };
 
   const handleSubmenuChange = (index, apiName, logoName) => {
-    setSubmenuChanges({
-      ...submenuChanges,
-      [index]: { apiName, logoName },
-    });
+    setSubmenuChanges((prevChanges) => ({
+      ...prevChanges,
+      [index]: {
+        apiName: apiName !== undefined ? apiName : config.api_names[index],
+        logoName: logoName !== undefined ? logoName : config.logo_names[index],
+      },
+    }));
   };
 
   const handleSubmenuClose = (index) => {
@@ -165,12 +160,11 @@ const SubsList = () => {
       const newLogoNames = [...config.logo_names];
       newApiNames[index] = apiName;
       newLogoNames[index] = logoName;
-      const updatedConfig = {
+      updateConfig({
         ...config,
         api_names: newApiNames,
         logo_names: newLogoNames,
-      };
-      updateConfig(updatedConfig);
+      });
     }
     setSubmenuIndex(null);
   };
@@ -180,7 +174,6 @@ const SubsList = () => {
   };
 
   const handleSwitchTimeChangeCommitted = async (event, value) => {
-    console.log("Switch time change committed")
     await updateConfig({ ...config, switch_time: value });
   };
 
@@ -336,10 +329,7 @@ const SubsList = () => {
                       {editIndex === index ? (
                         <TextField
                           value={editValue}
-                          onChange={(e) => {
-                            console.log(e.target.value);
-                            setEditValue(e.target.value)}
-                          }
+                          onChange={(e) => setEditValue(e.target.value)}
                           onClick={(e) => e.stopPropagation()}
                         />
                       ) : (
@@ -369,16 +359,16 @@ const SubsList = () => {
                 </div>
               );
             })}
-            
+
             <Stack spacing={2} direction="column" alignItems="center" marginTop="20px">
-            {showNewSubField && (
-                  <FinnhubSearch
-                    margin="dense"
-                    placeholder="New subscription"
-                    defaultValue={null} // Pass default value here
-                    onSearchResult={(sub) => setNewSub(sub)}
-                    sx={{ width: '200px' }}
-                  />
+              {showNewSubField && (
+                <FinnhubSearch
+                  margin="dense"
+                  placeholder="New subscription"
+                  defaultValue={null} // Pass default value here
+                  onSearchResult={(sub) => setNewSub(sub)}
+                  sx={{ width: '200px' }}
+                />
               )}
               <div style={{ position: 'relative', width: '100%' }}>
                 <Button
@@ -405,23 +395,23 @@ const SubsList = () => {
                 {config.subs && config.subs.length > 0 && (
                   <div style={{ marginTop: '20px' }}>
                     <h6 style={{ margin: '0' }}>Switch Speed (seconds)</h6>
-                      <Slider
-                        value={config.switch_time}
-                        onChange={handleSwitchTimeChange}
-                        onChangeCommitted={handleSwitchTimeChangeCommitted}
-                        aria-labelledby="continuous-slider"
-                        min={1}
-                        max={60}
-                        valueLabelDisplay="auto"
-                        sx={{ 
-                          width: '150px',
-                          color: 'black',
-                          '& .MuiSlider-thumb': {
-                            width: 12,
-                            height: 12,
-                          },
-                        }}  // Make the slider narrower
-                      />
+                    <Slider
+                      value={config.switch_time}
+                      onChange={handleSwitchTimeChange}
+                      onChangeCommitted={handleSwitchTimeChangeCommitted}
+                      aria-labelledby="continuous-slider"
+                      min={1}
+                      max={60}
+                      valueLabelDisplay="auto"
+                      sx={{
+                        width: '150px',
+                        color: 'black',
+                        '& .MuiSlider-thumb': {
+                          width: 12,
+                          height: 12,
+                        },
+                      }}  // Make the slider narrower
+                    />
                   </div>
                 )}
               </div>
