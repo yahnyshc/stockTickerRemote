@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import TextField from '@mui/material/TextField';
 import Autocomplete from '@mui/material/Autocomplete';
 
-export default function IconSearch({ defaultValue, onSearchResult }) {
+export default function IconSearch({ defaultValue, onChange }) {
   const [stocks, setStocks] = useState([]);
   
   const [inputValue, setInputValue] = useState(defaultValue || '');
@@ -22,23 +22,16 @@ export default function IconSearch({ defaultValue, onSearchResult }) {
 
   const handleInputChange = (event, newInputValue) => {
     setInputValue(newInputValue);
-  };
-
-  const handleSelect = (event, newValue) => {
-    if (newValue) {
-      onSearchResult(newValue);
-    }
+    onChange(newInputValue);
   };
 
   return (
       <Autocomplete
-        sx={{ marginTop: '10px' }}
         freeSolo
         id="free-solo-2-demo"
         disableClearable
         inputValue={inputValue}
         onInputChange={handleInputChange}
-        onChange={handleSelect}
         options={inputValue.length >= 2 ? stocks.map((option) => option.title) : []}
         renderInput={(params) => (
           <TextField

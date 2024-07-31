@@ -2,10 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import TextField from '@mui/material/TextField';
 import Autocomplete from '@mui/material/Autocomplete';
 
-export default function FinnhubSearch({ defaultValue, onSearchResult, sx }) {
+export default function FinnhubSearch({ defaultValue, onChange, sx }) {
   const [stocks, setStocks] = useState([]);
   const [inputValue, setInputValue] = useState(defaultValue || '');
-  const [selectedValue, setSelectedValue] = useState(null);
   const dataFetchedRef = useRef(false);
 
   useEffect(() => {
@@ -20,11 +19,10 @@ export default function FinnhubSearch({ defaultValue, onSearchResult, sx }) {
     fetchData();
   }, [defaultValue]);
 
-  useEffect(() => {
-    if (selectedValue) {
-      onSearchResult(selectedValue);
-    }
-  }, [selectedValue, onSearchResult]);
+  const handleInputChange = (event, newInputValue) => {
+    setInputValue(newInputValue);
+    onChange(newInputValue);
+  };
 
   return (
       <Autocomplete
@@ -33,12 +31,7 @@ export default function FinnhubSearch({ defaultValue, onSearchResult, sx }) {
         id="free-solo-1-demo"
         disableClearable
         inputValue={inputValue}
-        onInputChange={(event, newInputValue) => {
-          setInputValue(newInputValue);
-        }}
-        onChange={(event, newValue) => {
-          setSelectedValue(newValue);
-        }}
+        onInputChange={handleInputChange}
         options={inputValue.length >= 2 ? stocks.map((option) => option.title) : []}
         renderInput={(params) => (
           <TextField

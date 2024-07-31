@@ -1,28 +1,42 @@
 import * as React from 'react';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemButton from '@mui/material/ListItemButton';
-import ListItemText from '@mui/material/ListItemText';
-import ListItemAvatar from '@mui/material/ListItemAvatar';
-import Avatar from '@mui/material/Avatar';
-import Stack from '@mui/material/Stack';
-import Button from '@mui/material/Button';
-import { Container, Paper, TextField, IconButton, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Tooltip, Slider } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
-import EditIcon from '@mui/icons-material/Edit';
-import CheckIcon from '@mui/icons-material/Check';
+import {
+  Avatar,
+  Button,
+  Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Grid,
+  IconButton,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemButton,
+  ListItemText,
+  Paper,
+  Slider,
+  Stack,
+  TextField,
+  Tooltip,
+} from '@mui/material';
+import { Delete as DeleteIcon, Edit as EditIcon, Check as CheckIcon, Close as CloseIcon } from '@mui/icons-material';
 import { useConfigContext } from '../hooks/useConfigContext';
-import FinnhubSearch from './FinnhubSearch';
-import IconSearch from './IconSearch';
 import { useAuthContext } from '../hooks/useAuthContext';
 import DefaultSwitch from './DefaultSwitch';
-import CloseIcon from '@mui/icons-material/Close';
+import FinnhubSearch from './FinnhubSearch';
+import IconSearch from './IconSearch';
 
 const SubsList = () => {
   const { configs, selected, dispatch } = useConfigContext();
+  const { user } = useAuthContext();
+
   const [editIndex, setEditIndex] = React.useState(null);
   const [editValue, setEditValue] = React.useState('');
-  const [newSub, setNewSub] = React.useState('');
+  const [newSubName, setNewSubName] = React.useState('');
+  const [newSubApiName, setNewSubApiName] = React.useState('');
+  const [newSubLogoName, setNewSubLogoName] = React.useState('');
   const [showNewSubField, setShowNewSubField] = React.useState(false);
   const [editConfigName, setEditConfigName] = React.useState(false);
   const [configNameValue, setConfigNameValue] = React.useState('');
@@ -30,8 +44,6 @@ const SubsList = () => {
   const [config, setConfig] = React.useState(selected);
   const [submenuChanges, setSubmenuChanges] = React.useState({});
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
-
-  const { user } = useAuthContext();
 
   const updateConfig = async (newConfig) => {
     try {
@@ -45,7 +57,7 @@ const SubsList = () => {
       });
 
       dispatch({ type: 'UPDATE_CONFIG', payload: newConfig });
-      dispatch({type: 'U'})
+      dispatch({ type: 'U' });
 
       setConfig(newConfig);
     } catch (error) {
@@ -91,7 +103,6 @@ const SubsList = () => {
     setEditValue('');
   };
 
-
   const handleActiveChange = async (event) => {
     if (event.target.checked === true) {
       const clearCurrent = (c) => {
@@ -117,20 +128,18 @@ const SubsList = () => {
     setShowNewSubField(true);
   };
 
-  React.useEffect(() => {
-    console.log('Configs changed:  ', configs);
-  }, [configs]);
-
   const handleAddNew = async () => {
-    if (newSub && !config.subs.includes(newSub)) {
+    if (newSubName && newSubApiName) {
       await updateConfig({
         ...config,
-        subs: [...config.subs, newSub],
-        api_names: [...config.api_names, newSub],
-        logo_names: [...config.logo_names, newSub],
+        subs: [...config.subs, newSubName],
+        api_names: [...config.api_names, newSubApiName],
+        logo_names: [...config.logo_names, newSubLogoName || ''],
       });
       setShowNewSubField(false);
-      setNewSub('');
+      setNewSubName('');
+      setNewSubApiName('');
+      setNewSubLogoName('');
     }
   };
 
@@ -148,7 +157,7 @@ const SubsList = () => {
       ...prevChanges,
       [index]: {
         apiName: apiName !== undefined ? apiName : config.api_names[index],
-        logoName: logoName !== undefined ? logoName : config.logo_names[index],
+        logoName: logoName,
       },
     }));
   };
@@ -210,7 +219,7 @@ const SubsList = () => {
     setDeleteDialogOpen(true);
   };
 
-  const paperStyle = { padding: '10px 10px', width: '90%', margin: '10px auto', position: 'relative' };
+  const paperStyle = { padding: '20px', width: '90%', margin: '20px auto' };
 
   return (
     <Container>
@@ -219,15 +228,14 @@ const SubsList = () => {
           style={{
             display: 'flex',
             justifyContent: 'center',
-            textAlign: 'center',
             alignItems: 'center',
             border: '1px solid black',
             borderRadius: '10px',
             backgroundColor: '#292929',
-            marginBottom: '10px',
+            marginBottom: '20px',
             color: 'white',
-            position: 'relative',
             padding: '10px',
+            position: 'relative',
           }}
         >
           <DefaultSwitch
@@ -242,7 +250,7 @@ const SubsList = () => {
               edge="end"
               aria-label="delete"
               onClick={handleDeleteConfig}
-              style={{ position: 'absolute', right: '17px', top: '60px' }}
+              style={{ position: 'absolute', right: '15px', top: '60px' }}
             >
               <DeleteIcon style={{ color: '#DC143C' }} />
             </IconButton>
@@ -252,7 +260,7 @@ const SubsList = () => {
               edge="end"
               aria-label="save"
               onClick={handleConfigNameSave}
-              style={{ position: 'absolute', right: '17px', top: '30px' }}
+              style={{ position: 'absolute', right: '15px', top: '30px' }}
             >
               <CheckIcon style={{ color: 'white' }} />
             </IconButton>
@@ -262,7 +270,7 @@ const SubsList = () => {
                 edge="end"
                 aria-label="edit"
                 onClick={handleConfigNameEdit}
-                style={{ position: 'absolute', right: '17px', top: '30px' }}
+                style={{ position: 'absolute', right: '15px', top: '30px' }}
               >
                 <EditIcon style={{ color: 'white' }} />
               </IconButton>
@@ -303,9 +311,14 @@ const SubsList = () => {
                     secondaryAction={
                       <div>
                         {editIndex === index ? (
-                          <IconButton edge="end" aria-label="save" onClick={() => handleSave()}>
-                            <CheckIcon />
-                          </IconButton>
+                          <IconButton edge="end" aria-label="save" onClick={
+                            () => {
+                              handleSave();
+                              handleSubmenuClose(index)
+                            }
+                            }>
+                              <CheckIcon />
+                            </IconButton>
                         ) : (
                           <IconButton edge="end" aria-label="edit" onClick={handleEdit(index)}>
                             <EditIcon />
@@ -317,13 +330,13 @@ const SubsList = () => {
                       </div>
                     }
                     disablePadding
-                    style={{ borderLeft: '4px solid red', marginTop: '10px' }} // Add this line to include the red vertical line
+                    style={{ borderLeft: '4px solid red', marginTop: '10px' }}
                   >
                     <ListItemButton onClick={() => setSubmenuIndex(submenuIndex === index ? null : index)}>
                       <ListItemAvatar>
                         <Avatar
                           alt={`Avatar ${config.logo_names[index]}`}
-                          src={`https://financialmodelingprep.com/image-stock/${config.logo_names[index]}.png`}
+                          src={config.logo_names[index] ? `https://financialmodelingprep.com/image-stock/${config.logo_names[index]}.png` : undefined}
                         />
                       </ListItemAvatar>
                       {editIndex === index ? (
@@ -331,6 +344,7 @@ const SubsList = () => {
                           value={editValue}
                           onChange={(e) => setEditValue(e.target.value)}
                           onClick={(e) => e.stopPropagation()}
+                          sx={{ marginRight: '30px' }}
                         />
                       ) : (
                         <ListItemText id={labelId} primary={`${value}`} />
@@ -339,21 +353,31 @@ const SubsList = () => {
                   </ListItem>
                   {submenuIndex === index && (
                     <div style={{ padding: '10px 20px' }}>
-                      <FinnhubSearch
-                        fullWidth
-                        placeholder="Finnhub search"
-                        margin="dense"
-                        defaultValue={config.api_names[index]} // Pass default value here
-                        onSearchResult={(apiName) => handleSubmenuChange(index, apiName, submenuChanges[index]?.logoName)}
-                      />
-                      <IconSearch
-                        fullWidth
-                        placeholder="FMP Icon search"
-                        margin="dense"
-                        defaultValue={config.logo_names[index]} // Pass default value here
-                        onSearchResult={(logoName) => handleSubmenuChange(index, submenuChanges[index]?.apiName, logoName)}
-                      />
-                      <Button onClick={() => handleSubmenuClose(index)}>Save</Button>
+                      <Grid container spacing={2}>
+                        <Grid item xs={12} sm={6}>
+                          <FinnhubSearch
+                            fullWidth
+                            placeholder="Finnhub search"
+                            margin="dense"
+                            defaultValue={config.api_names[index]}
+                            onChange={(apiName) => handleSubmenuChange(index, apiName, submenuChanges[index]?.logoName)}
+                          />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                          <IconSearch
+                            fullWidth
+                            placeholder="FMP Icon search"
+                            margin="dense"
+                            defaultValue={config.logo_names[index]}
+                            onChange={(logoName) => handleSubmenuChange(index, submenuChanges[index]?.apiName, logoName)}
+                          />
+                        </Grid>
+                        <Grid item xs={12}>
+                          <Button variant="contained" onClick={() => handleSubmenuClose(index)}>
+                            Save
+                          </Button>
+                        </Grid>
+                      </Grid>
                     </div>
                   )}
                 </div>
@@ -362,13 +386,33 @@ const SubsList = () => {
 
             <Stack spacing={2} direction="column" alignItems="center" marginTop="20px">
               {showNewSubField && (
-                <FinnhubSearch
-                  margin="dense"
-                  placeholder="New subscription"
-                  defaultValue={null} // Pass default value here
-                  onSearchResult={(sub) => setNewSub(sub)}
-                  sx={{ width: '200px' }}
-                />
+                <Container>
+                  <TextField
+                    margin="dense"
+                    placeholder="Subscription name"
+                    value={newSubName}
+                    onChange={(e) => setNewSubName(e.target.value)}
+                    fullWidth
+                  />
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} sm={6}>
+                      <FinnhubSearch
+                        margin="dense"
+                        placeholder="Finnhub search"
+                        onChange={(apiName) => setNewSubApiName(apiName)}
+                        sx={{ width: '100%' }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <IconSearch
+                        margin="dense"
+                        placeholder="Logo search"
+                        onChange={(logoName) => setNewSubLogoName(logoName)}
+                        sx={{ width: '100%' }}
+                      />
+                    </Grid>
+                  </Grid>
+                </Container>
               )}
               <div style={{ position: 'relative', width: '100%' }}>
                 <Button
@@ -393,7 +437,7 @@ const SubsList = () => {
                   </IconButton>
                 )}
                 {config.subs && config.subs.length > 0 && (
-                  <div style={{ marginTop: '20px' }}>
+                  <div style={{ marginTop: '20px', textAlign: 'center' }}>
                     <h6 style={{ margin: '0' }}>Switch Speed (seconds)</h6>
                     <Slider
                       value={config.switch_time}
@@ -410,7 +454,7 @@ const SubsList = () => {
                           width: 12,
                           height: 12,
                         },
-                      }}  // Make the slider narrower
+                      }}
                     />
                   </div>
                 )}
