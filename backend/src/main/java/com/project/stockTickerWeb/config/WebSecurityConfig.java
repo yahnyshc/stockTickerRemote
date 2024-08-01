@@ -35,7 +35,6 @@ public class WebSecurityConfig {
                 .authorizeHttpRequests(authorizeRequests ->
                         authorizeRequests
                                 .requestMatchers("/user/signup", "/user/login").permitAll() // Allow unauthenticated access to signup and login endpoints
-                                .requestMatchers("/ws/*").hasAuthority("SCOPE_notifications.read")
                                 .requestMatchers("/config/**").authenticated() // Require authentication for /config endpoints
                                 .anyRequest().permitAll() // Allow unauthenticated access to all other endpoints
                 )
