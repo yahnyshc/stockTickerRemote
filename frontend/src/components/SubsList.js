@@ -152,29 +152,37 @@ const SubsList = () => {
     setEditConfigName(false);
   };
 
-  const handleSubmenuChange = (index, apiName, logoName) => {
+  // Handle changes in the submenu fields
+  const handleSubmenuChange = (index, field, value) => {
     setSubmenuChanges((prevChanges) => ({
       ...prevChanges,
       [index]: {
-        apiName: apiName !== undefined ? apiName : config.api_names[index],
-        logoName: logoName,
+        ...prevChanges[index],
+        [field]: value || '', // Update only the specific field (apiName or logoName)
       },
     }));
   };
 
+  // Handle saving and closing the submenu, ensuring both arrays are in sync
   const handleSubmenuClose = (index) => {
-    if (submenuChanges[index]) {
-      const { apiName, logoName } = submenuChanges[index];
-      const newApiNames = [...config.api_names];
-      const newLogoNames = [...config.logo_names];
+    const { apiName, logoName } = submenuChanges[index] || {};
+    const newApiNames = [...config.api_names];
+    const newLogoNames = [...config.logo_names];
+
+    if (apiName !== undefined) {
       newApiNames[index] = apiName;
-      newLogoNames[index] = logoName;
-      updateConfig({
-        ...config,
-        api_names: newApiNames,
-        logo_names: newLogoNames,
-      });
     }
+    if (logoName !== undefined) {
+      newLogoNames[index] = logoName;
+    }
+
+    updateConfig({
+      ...config,
+      api_names: newApiNames,
+      logo_names: newLogoNames,
+    });
+
+    // Close the submenu by setting the index to null
     setSubmenuIndex(null);
   };
 
@@ -357,19 +365,19 @@ const SubsList = () => {
                         <Grid item xs={12} sm={6}>
                           <FinnhubSearch
                             fullWidth
-                            placeholder="Finnhub search"
+                            placeholder="API subscription search"
                             margin="dense"
-                            defaultValue={config.api_names[index]}
-                            onChange={(apiName) => handleSubmenuChange(index, apiName, submenuChanges[index]?.logoName)}
+                            defaultValue={submenuChanges[index]?.apiName || ''}
+                            onChange={(value) => handleSubmenuChange(index, 'apiName', value)}
                           />
                         </Grid>
                         <Grid item xs={12} sm={6}>
                           <IconSearch
                             fullWidth
-                            placeholder="FMP Icon search"
+                            placeholder="Logo search"
                             margin="dense"
-                            defaultValue={config.logo_names[index]}
-                            onChange={(logoName) => handleSubmenuChange(index, submenuChanges[index]?.apiName, logoName)}
+                            defaultValue={submenuChanges[index]?.logoName || ''}
+                            onChange={(value) => handleSubmenuChange(index, 'logoName', value)}
                           />
                         </Grid>
                         <Grid item xs={12}>

@@ -55,6 +55,8 @@ public class WebSocketHandler extends TextWebSocketHandler {
             configMap.put("api_names", currentConfig.getApi_names());
             configMap.put("logo_names", currentConfig.getLogo_names());
             configMap.put("switch_time", currentConfig.getSwitch_time());
+            configMap.put("id", currentConfig.getId());
+            configMap.put("name", currentConfig.getName());
 
             // Convert the HashMap to a JSON string using Gson
             Gson gson = new Gson();
@@ -83,6 +85,8 @@ public class WebSocketHandler extends TextWebSocketHandler {
                 configMap.put("api_names", config.getApi_names());
                 configMap.put("logo_names", config.getLogo_names());
                 configMap.put("switch_time", config.getSwitch_time());
+                configMap.put("id", config.getId());
+                configMap.put("name", config.getName());
 
                 // Convert the HashMap to a JSON string using Gson
                 Gson gson = new Gson();
