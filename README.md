@@ -6,8 +6,7 @@ Website url: https://stock-ticker-remote.link
 
 ## Photo
 
-![image](https://github.com/user-attachments/assets/14d96cda-1d88-4194-9601-52b8c40e28c5)
-
+![image](https://github.com/user-attachments/assets/1e25149b-b803-43a3-bda9-01d14ef0e414)
 
 ## Features
 - Built a web app to configure subscriptions, logos, and ticker speed rendered on the Led Stock Ticker.
@@ -29,6 +28,10 @@ Website url: https://stock-ticker-remote.link
 
 ## Demo
 
-https://github.com/user-attachments/assets/4c48226e-fb0e-4aac-a6dd-0a8c97e617ba
+
+
+https://github.com/user-attachments/assets/d409993d-6304-4f16-a376-a17ddbca9f4e
+
+
 
 
