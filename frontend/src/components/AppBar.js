@@ -31,13 +31,16 @@ export default function Appbar() {
   };
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
+    <Box >
       <AppBar position="relative" sx={{ backgroundColor: '#171717', padding: '10px 0' }}>
         <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontSize: '1.5rem', marginLeft: '3%', fontFamily: 'Arial, sans-serif', fontWeight: 'bold' }}>
-            <Link to="/" style={{ textDecoration: 'none', color: 'white' }}>Ticker Controller</Link>
-          </Typography>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <img src="/logo192.png" alt="logo" style={{ width: '40px', height: '40px', marginRight: '10px' }} />
+            <Typography variant="h6" component="div" sx={{ fontSize: '1.5rem', fontFamily: 'Arial, sans-serif', fontWeight: 'bold' }}>
+              <Link to="/" style={{ textDecoration: 'none', color: 'white' }}>Stock Ticker</Link>
+            </Typography>
+          </Box>
+          <div style={{ position: 'absolute', right: "10px" }}>
             {user && (
               <>
                 <Typography

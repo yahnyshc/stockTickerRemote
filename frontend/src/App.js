@@ -9,6 +9,7 @@ import Profile from './pages/Profile.js';
 
 function App() {
   const { user } = useAuthContext()
+
   return (
     <div className="App">
       <BrowserRouter>        

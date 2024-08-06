@@ -15,9 +15,11 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 import com.google.gson.Gson;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @Component
 public class WebSocketHandler extends TextWebSocketHandler {
@@ -28,7 +30,11 @@ public class WebSocketHandler extends TextWebSocketHandler {
     @Autowired
     private ConfigService configService;
 
+    // Map of session ID to WebSocketSession
     private ConcurrentMap<String, WebSocketSession> sessions = new ConcurrentHashMap<>();
+
+    // Map of user ID to list of session IDs
+    private ConcurrentMap<Integer, List<String>> userSessions = new ConcurrentHashMap<>();
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
@@ -44,6 +50,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
         }
 
         sessions.put(session.getId(), session);
+        userSessions.computeIfAbsent(user.getId(), k -> new CopyOnWriteArrayList<>()).add(session.getId());
 
         // Send the current config (only specific fields)
         Config currentConfig = configService.getCurrentConfig(user.getId());
@@ -72,30 +79,44 @@ public class WebSocketHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
-        sessions.remove(session.getId());
+        String sessionId = session.getId();
+        sessions.remove(sessionId);
+
+        // Remove the session ID from the userSessions map
+        userSessions.forEach((userId, sessionIds) -> sessionIds.remove(sessionId));
+
+        // Remove empty lists from the userSessions map
+        userSessions.entrySet().removeIf(entry -> entry.getValue().isEmpty());
     }
 
     public void sendConfigUpdate(Config config) {
-        sessions.values().forEach(session -> {
-            try {
-                // Create a HashMap with only the desired fields
-                Map<String, Object> configMap = new HashMap<>();
-                configMap.put("type", "config");
-                configMap.put("subs", config.getSubs());
-                configMap.put("api_names", config.getApi_names());
-                configMap.put("logo_names", config.getLogo_names());
-                configMap.put("switch_time", config.getSwitch_time());
-                configMap.put("id", config.getId());
-                configMap.put("name", config.getName());
+        Integer userId = config.getUser().getId();
+        List<String> sessionIds = userSessions.get(userId);
+        if (sessionIds != null) {
+            sessionIds.forEach(sessionId -> {
+                WebSocketSession session = sessions.get(sessionId);
+                if (session != null) {
+                    try {
+                        // Create a HashMap with only the desired fields
+                        Map<String, Object> configMap = new HashMap<>();
+                        configMap.put("type", "config");
+                        configMap.put("subs", config.getSubs());
+                        configMap.put("api_names", config.getApi_names());
+                        configMap.put("logo_names", config.getLogo_names());
+                        configMap.put("switch_time", config.getSwitch_time());
+                        configMap.put("id", config.getId());
+                        configMap.put("name", config.getName());
 
-                // Convert the HashMap to a JSON string using Gson
-                Gson gson = new Gson();
-                String jsonString = gson.toJson(configMap);
+                        // Convert the HashMap to a JSON string using Gson
+                        Gson gson = new Gson();
+                        String jsonString = gson.toJson(configMap);
 
-                session.sendMessage(new TextMessage(jsonString));
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        });
+                        session.sendMessage(new TextMessage(jsonString));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+        }
     }
 }
