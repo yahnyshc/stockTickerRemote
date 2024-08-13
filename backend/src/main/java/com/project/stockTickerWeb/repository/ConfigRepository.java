@@ -10,7 +10,7 @@ import java.util.List;
 @Repository
 public interface ConfigRepository extends JpaRepository<Config, Integer> {
 
-    List<Config> findAllByUserOrderByLastTouchedDesc(User user);
+    List<Config> findAllByUserIdOrderByLastTouchedDesc(int userId);
     void delete(Config config);
     Config findByUserIdAndCurrentTrue(int userId);
 }

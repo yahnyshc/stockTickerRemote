@@ -90,7 +90,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
     }
 
     public void sendConfigUpdate(Config config) {
-        Integer userId = config.getUser().getId();
+        Integer userId = config.getUserId();
         List<String> sessionIds = userSessions.get(userId);
         if (sessionIds != null) {
             sessionIds.forEach(sessionId -> {

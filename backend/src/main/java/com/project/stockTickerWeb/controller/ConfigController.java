@@ -20,13 +20,13 @@ public class ConfigController {
     @CrossOrigin
     @PostMapping("/add")
     public Config add(@RequestBody Config config, @RequestParam int userId){
-        return configService.saveConfig(config, userId);
+        configService.saveConfig(config, userId);
+        return config;
     }
 
     @CrossOrigin
     @PatchMapping("/edit")
     public Config edit(@RequestBody Config config, @RequestParam int userId){
-        Config prevConfig = configService.getConfigById(config.getId());
         if ( config.isCurrent() ){
             webSocketHandler.sendConfigUpdate(config);
         }

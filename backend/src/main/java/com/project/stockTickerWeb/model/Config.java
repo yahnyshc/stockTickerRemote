@@ -2,6 +2,7 @@ package com.project.stockTickerWeb.model;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.ColumnDefault;
+import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -28,9 +29,9 @@ public class Config {
     @Column(name = "last_touched")
     private LocalDateTime lastTouched;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @NotNull
+    @Column(name = "user_id", nullable = false)
+    private int userId;
 
     @ColumnDefault("5")
     private int switch_time;
@@ -102,12 +103,12 @@ public class Config {
         this.logo_names = logo_names;
     }
 
-    public User getUser() {
-        return user;
+    public int getUserId() {
+        return userId;
     }
 
-    public void setUser(User user) {
-        this.user = user;
+    public void setUserId(int userId) {
+        this.userId = userId;
     }
 
     public int getSwitch_time() {

@@ -23,7 +23,7 @@ public class ConfigServiceImpl implements ConfigService{
     public Config saveConfig(Config config, int userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        config.setUser(user);
+        config.setUserId(userId);
         return configRepository.save(config);
     }
 
@@ -31,7 +31,7 @@ public class ConfigServiceImpl implements ConfigService{
     public List<Config> getAllConfigs(int userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        return configRepository.findAllByUserOrderByLastTouchedDesc(user);
+        return configRepository.findAllByUserIdOrderByLastTouchedDesc(userId);
     }
 
     public Config updateConfig(Config config, int userId) {
@@ -40,11 +40,11 @@ public class ConfigServiceImpl implements ConfigService{
         Config existingConfig = configRepository.findById(config.getId())
                 .orElseThrow(() -> new RuntimeException("Config not found"));
 
-        if (existingConfig.getUser().getId() != userId) {
+        if (existingConfig.getUserId() != userId) {
             throw new RuntimeException("Unauthorized update attempt");
         }
 
-        config.setUser(user);
+        config.setUserId(userId);
         return configRepository.save(config);
     }
 
@@ -54,11 +54,11 @@ public class ConfigServiceImpl implements ConfigService{
         Config existingConfig = configRepository.findById(config.getId())
                 .orElseThrow(() -> new RuntimeException("Config not found"));
 
-        if (existingConfig.getUser().getId() != userId) {
-            throw new RuntimeException("Unauthorized update attempt");
+        if (existingConfig.getUserId() != userId) {
+            throw new RuntimeException("Unauthorized delete attempt");
         }
 
-        config.setUser(user);
+        config.setUserId(userId);
         configRepository.delete(existingConfig);
         return config;
     }
